@@ -4,11 +4,14 @@ import com.google.common.base.MoreObjects;
 import com.hpfxd.spectatorplus.fabric.client.SpectatorClientMod;
 import com.hpfxd.spectatorplus.fabric.client.util.SpecUtil;
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
+import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
+import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.llamalad7.mixinextras.sugar.Local;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.AbstractClientPlayer;
+import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.*;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.core.Direction;
@@ -89,8 +92,9 @@ public abstract class GameRendererMixin {
         return original;
     }
 
-    @org.spongepowered.asm.mixin.injection.Redirect(method = "renderItemInHand", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/ItemInHandRenderer;submitHandsWithItems(FLcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/SubmitNodeCollector;Lnet/minecraft/client/player/LocalPlayer;I)V"))
-    private void spectatorplus$renderCustomArms(ItemInHandRenderer instance, float partialTicks, PoseStack poseStackIn, SubmitNodeCollector submitNodeCollector, net.minecraft.client.player.LocalPlayer localPlayer, int packedLightCoords) {
+    // WrapOperation instead of Redirect: Iris already redirects this call, and two Redirects on one call crash
+    @WrapOperation(method = "renderItemInHand", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/ItemInHandRenderer;submitHandsWithItems(FLcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/SubmitNodeCollector;Lnet/minecraft/client/player/LocalPlayer;I)V"))
+    private void spectatorplus$renderCustomArms(ItemInHandRenderer instance, float partialTicks, PoseStack poseStackIn, SubmitNodeCollector submitNodeCollector, LocalPlayer localPlayer, int packedLightCoords, Operation<Void> original) {
         if (this.minecraft.gameMode != null && this.minecraft.gameMode.getPlayerMode() == GameType.SPECTATOR && SpectatorClientMod.config.renderArms) {
             final AbstractClientPlayer spectated = SpecUtil.getCameraPlayer(this.minecraft);
             if (spectated != null && !spectated.isSpectator()) {
@@ -139,7 +143,7 @@ public abstract class GameRendererMixin {
             }
         }
         
-        instance.submitHandsWithItems(partialTicks, poseStackIn, submitNodeCollector, localPlayer, packedLightCoords);
+        original.call(instance, partialTicks, poseStackIn, submitNodeCollector, localPlayer, packedLightCoords);
     }
 
     @Unique
