@@ -118,6 +118,11 @@ public class SpectatorEffectsHudRenderer {
             }
         } else if (localEffects != null) {
             for (MobEffectInstance inst : localEffects) {
+                // match vanilla: servers hide some effects from the HUD
+                if (!inst.showIcon()) {
+                    continue;
+                }
+
                 int y = isUp
                         ? effectAnchorVirtualY - ITEM_HEIGHT - effectIndex * (ITEM_HEIGHT + SPACING)
                         : effectTopVirtualY + effectIndex * (ITEM_HEIGHT + SPACING);
