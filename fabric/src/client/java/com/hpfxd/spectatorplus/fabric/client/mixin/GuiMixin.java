@@ -69,7 +69,8 @@ public abstract class GuiMixin {
     @Inject(method = "extractEffects(Lnet/minecraft/client/gui/GuiGraphicsExtractor;Lnet/minecraft/client/DeltaTracker;)V", at = @At("HEAD"), cancellable = true)
     private void spectatorplus$cancelRenderEffects(GuiGraphicsExtractor guiGraphics, DeltaTracker deltaTracker,
             CallbackInfo ci) {
-        if (SpectatorClientMod.config.renderEffects) {
+        // own effects stay on the vanilla HUD, only replace it while spectating another player
+        if (SpectatorClientMod.config.renderEffects && SpecUtil.getCameraPlayer(this.minecraft) != null) {
             ci.cancel();
             if (!this.isHidden() && !this.getSpectatorGui().isMenuActive()) {
                 SpectatorEffectsHudRenderer.render(this.minecraft, guiGraphics, deltaTracker);
