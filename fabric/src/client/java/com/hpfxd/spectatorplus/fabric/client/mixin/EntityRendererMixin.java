@@ -14,11 +14,11 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(EntityRenderer.class)
 public abstract class EntityRendererMixin {
     @Inject(
-            method = "shouldRender(Lnet/minecraft/world/entity/Entity;Lnet/minecraft/client/renderer/culling/Frustum;DDD)Z",
+            method = "shouldRender(Lnet/minecraft/world/entity/Entity;Lnet/minecraft/client/renderer/culling/Frustum;DDDF)Z",
             at = @At("HEAD"),
             cancellable = true
     )
-    private void spectatorplus$maybeHideSpectator(Entity entity, Frustum frustum, double x, double y, double z, CallbackInfoReturnable<Boolean> cir) {
+    private void spectatorplus$maybeHideSpectator(Entity entity, Frustum frustum, double x, double y, double z, float partialTicks, CallbackInfoReturnable<Boolean> cir) {
         final Minecraft mc = Minecraft.getInstance();
         if (!SpectatorClientMod.config.showSpectators && mc.player != null && mc.player.isSpectator() && entity instanceof final RemotePlayer player && player.isSpectator()) {
             cir.setReturnValue(false);

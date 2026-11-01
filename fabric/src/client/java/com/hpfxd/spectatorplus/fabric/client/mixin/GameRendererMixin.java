@@ -1,24 +1,15 @@
 package com.hpfxd.spectatorplus.fabric.client.mixin;
 
-import com.google.common.base.MoreObjects;
 import com.hpfxd.spectatorplus.fabric.client.SpectatorClientMod;
 import com.hpfxd.spectatorplus.fabric.client.util.SpecUtil;
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
-import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
-import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.llamalad7.mixinextras.sugar.Local;
-import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.math.Axis;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.AbstractClientPlayer;
-import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.*;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.core.Direction;
 import net.minecraft.util.Mth;
-import net.minecraft.world.InteractionHand;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.entity.Pose;
@@ -42,9 +33,6 @@ public abstract class GameRendererMixin {
     private RenderBuffers renderBuffers;
     @Shadow
     @Final
-    public ItemInHandRenderer itemInHandRenderer;
-    @Shadow
-    @Final
     private SubmitNodeStorage handAndScreenSubmitNodeStorage;
 
     @Unique
@@ -55,15 +43,6 @@ public abstract class GameRendererMixin {
     private float walkDist;
     @Unique
     private float walkDistO;
-
-    @Unique
-    private float xBob;
-    @Unique
-    private float yBob;
-    @Unique
-    private float xBobO;
-    @Unique
-    private float yBobO;
 
     // @Redirect(method = "renderItemInHand", at = @At(value = "INVOKE", target =
     // "Lcom/mojang/blaze3d/vertex/PoseStack;mulPose(Lorg/joml/Matrix4fc;)V",
@@ -92,90 +71,6 @@ public abstract class GameRendererMixin {
         return original;
     }
 
-    // WrapOperation instead of Redirect: Iris already redirects this call, and two Redirects on one call crash
-    @WrapOperation(method = "renderItemInHand", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/ItemInHandRenderer;submitHandsWithItems(FLcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/SubmitNodeCollector;Lnet/minecraft/client/player/LocalPlayer;I)V"))
-    private void spectatorplus$renderCustomArms(ItemInHandRenderer instance, float partialTicks, PoseStack poseStackIn, SubmitNodeCollector submitNodeCollector, LocalPlayer localPlayer, int packedLightCoords, Operation<Void> original) {
-        if (this.minecraft.gameMode != null && this.minecraft.gameMode.getPlayerMode() == GameType.SPECTATOR && SpectatorClientMod.config.renderArms) {
-            final AbstractClientPlayer spectated = SpecUtil.getCameraPlayer(this.minecraft);
-            if (spectated != null && !spectated.isSpectator()) {
-                float attackAnim = spectated.getAttackAnim(partialTicks);
-                final InteractionHand interactionHand = MoreObjects.firstNonNull(spectated.swingingArm,
-                        InteractionHand.MAIN_HAND);
-                float pitch = Mth.lerp(partialTicks, spectated.xRotO, spectated.getXRot());
-
-                poseStackIn.pushPose();
-                poseStackIn.mulPose(Axis.XP.rotationDegrees(
-                        (spectated.getViewXRot(partialTicks) - Mth.lerp(partialTicks, this.xBobO, this.xBob)) * 0.1F));
-                poseStackIn.mulPose(
-                        Axis.YP.rotationDegrees(Mth.degreesDifference(Mth.lerp(partialTicks, this.yBobO, this.yBob),
-                                Mth.rotLerp(partialTicks, spectated.yRotO, spectated.getYRot())) * 0.1F));
-
-                final ItemInHandRenderer.HandRenderSelection handRenderSelection = evaluateWhichHandsToRender(
-                        spectated);
-                final ItemInHandRendererAccessor accessor = ((ItemInHandRendererAccessor) instance);
-
-                if (handRenderSelection.renderMainHand) {
-                    final float swingProgress = interactionHand == InteractionHand.MAIN_HAND ? attackAnim : 0.0F;
-                    final float equippedProgress = accessor.getItemModelResolver()
-                            .swapAnimationScale(accessor.getMainHandItem())
-                            * (1F - Mth.lerp(partialTicks, accessor.getOMainHandHeight(),
-                                    accessor.getMainHandHeight()));
-
-                    accessor.invokeRenderArmWithItem(spectated, partialTicks,
-                            pitch, InteractionHand.MAIN_HAND, swingProgress, accessor.getMainHandItem(),
-                            equippedProgress,
-                            poseStackIn, submitNodeCollector, packedLightCoords);
-                }
-
-                if (handRenderSelection.renderOffHand) {
-                    final float swingProgress = interactionHand == InteractionHand.OFF_HAND ? attackAnim : 0.0F;
-                    final float equippedProgress = accessor.getItemModelResolver()
-                            .swapAnimationScale(accessor.getOffHandItem())
-                            * (1F - Mth.lerp(partialTicks, accessor.getOOffHandHeight(), accessor.getOffHandHeight()));
-
-                    accessor.invokeRenderArmWithItem(spectated, partialTicks,
-                            pitch, InteractionHand.OFF_HAND, swingProgress, accessor.getOffHandItem(), equippedProgress,
-                            poseStackIn, submitNodeCollector, packedLightCoords);
-                }
-
-                poseStackIn.popPose();
-                return;
-            }
-        }
-        
-        original.call(instance, partialTicks, poseStackIn, submitNodeCollector, localPlayer, packedLightCoords);
-    }
-
-    @Unique
-    private static ItemInHandRenderer.HandRenderSelection evaluateWhichHandsToRender(AbstractClientPlayer player) {
-        // see ItemInHandRenderer#evaluateWhichHandsToRender
-        // could not just call into the original method due to the argument being
-        // LocalPlayer
-
-        ItemStack mainHandItem = player.getMainHandItem();
-        ItemStack offHandItem = player.getOffhandItem();
-        boolean bl = mainHandItem.is(Items.BOW) || offHandItem.is(Items.BOW);
-        boolean bl2 = mainHandItem.is(Items.CROSSBOW) || offHandItem.is(Items.CROSSBOW);
-        if (!bl && !bl2) {
-            return ItemInHandRenderer.HandRenderSelection.RENDER_BOTH_HANDS;
-        } else if (player.isUsingItem()) {
-            ItemStack itemStack = player.getUseItem();
-            InteractionHand interactionHand = player.getUsedItemHand();
-            if (!itemStack.is(Items.BOW) && !itemStack.is(Items.CROSSBOW)) {
-                return interactionHand == InteractionHand.MAIN_HAND
-                        && ItemInHandRendererAccessor.invokeIsChargedCrossbow(player.getOffhandItem())
-                                ? ItemInHandRenderer.HandRenderSelection.RENDER_MAIN_HAND_ONLY
-                                : ItemInHandRenderer.HandRenderSelection.RENDER_BOTH_HANDS;
-            } else {
-                return ItemInHandRenderer.HandRenderSelection.onlyForHand(interactionHand);
-            }
-        } else {
-            return ItemInHandRendererAccessor.invokeIsChargedCrossbow(mainHandItem)
-                    ? ItemInHandRenderer.HandRenderSelection.RENDER_MAIN_HAND_ONLY
-                    : ItemInHandRenderer.HandRenderSelection.RENDER_BOTH_HANDS;
-        }
-    }
-
     @Inject(method = "tick()V", at = @At("HEAD"))
     private void spectatorplus$tick(CallbackInfo ci) {
         final AbstractClientPlayer spectated = SpecUtil.getCameraPlayer(this.minecraft);
@@ -197,15 +92,8 @@ public abstract class GameRendererMixin {
             } else {
                 this.bob += (Math.min(0.1F, deltaMovement) - this.bob) * 0.4F;
             }
-
-            // Hand swaying
-
-            this.yBobO = this.yBob;
-            this.xBobO = this.xBob;
-            this.xBob += Mth.degreesDifference(this.xBob, spectated.getXRot()) * 0.5F;
-            this.yBob += Mth.degreesDifference(this.yBob, spectated.getYRot()) * 0.5F;
         } else {
-            this.bob = this.bobO = this.walkDist = this.walkDistO = this.xBob = this.yBob = this.xBobO = this.yBobO = 0;
+            this.bob = this.bobO = this.walkDist = this.walkDistO = 0;
         }
     }
 

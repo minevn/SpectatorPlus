@@ -1,6 +1,7 @@
 package com.hpfxd.spectatorplus.fabric.client;
 
 import com.google.common.collect.Iterables;
+import com.mojang.blaze3d.platform.InputConstants;
 import com.hpfxd.spectatorplus.fabric.client.mixin.PlayerMenuItemAccessor;
 import com.hpfxd.spectatorplus.fabric.client.mixin.SpectatorGuiAccessor;
 import com.hpfxd.spectatorplus.fabric.client.mixin.SpectatorMenuAccessor;
@@ -22,7 +23,6 @@ import net.minecraft.network.protocol.game.ServerboundTeleportToEntityPacket;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntitySelector;
 import net.minecraft.world.level.GameType;
-import org.lwjgl.glfw.GLFW;
 
 import java.util.Comparator;
 import java.util.List;
@@ -40,19 +40,19 @@ public class SpectatorKeybinds {
     public static void init() {
         CLOSEST_PLAYER = KeyMappingHelper.registerKeyMapping(new KeyMapping(
                 "key.spectatorplus.closestPlayer",
-                GLFW.GLFW_KEY_UP,
+                InputConstants.KEY_UP,
                 KeyMapping.Category.MISC
         ));
 
         NEXT_PLAYER = KeyMappingHelper.registerKeyMapping(new KeyMapping(
                 "key.spectatorplus.nextPlayer",
-                GLFW.GLFW_KEY_RIGHT,
+                InputConstants.KEY_RIGHT,
                 KeyMapping.Category.MISC
         ));
 
         PREVIOUS_PLAYER = KeyMappingHelper.registerKeyMapping(new KeyMapping(
                 "key.spectatorplus.previousPlayer",
-                GLFW.GLFW_KEY_LEFT,
+                InputConstants.KEY_LEFT,
                 KeyMapping.Category.MISC
         ));
 

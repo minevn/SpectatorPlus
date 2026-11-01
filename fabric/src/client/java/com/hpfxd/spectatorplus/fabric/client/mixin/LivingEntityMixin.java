@@ -12,6 +12,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.component.SwingAnimation;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.HitResult;
 
@@ -20,7 +21,7 @@ import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.util.Map;
 
@@ -30,10 +31,10 @@ public abstract class LivingEntityMixin extends Entity {
         super(entityType, level);
     }
 
-    @Inject(method = "swing(Lnet/minecraft/world/InteractionHand;)V", at = @At("TAIL"))
-    private void spectatorplus$resetSpectatedAttackStrength(InteractionHand hand, CallbackInfo ci) {
+    @Inject(method = "swing(Lnet/minecraft/world/InteractionHand;Lnet/minecraft/world/item/component/SwingAnimation;Z)Z", at = @At("RETURN"))
+    private void spectatorplus$resetSpectatedAttackStrength(InteractionHand hand, SwingAnimation animation, boolean sendToSwingingEntity, CallbackInfoReturnable<Boolean> cir) {
         final AbstractClientPlayer spectated = SpecUtil.getCameraPlayer(Minecraft.getInstance());
-        if ((Object) this == spectated) {
+        if (cir.getReturnValueZ() && (Object) this == spectated) {
             if (!this.isBreakingBlock() && !this.isLookingAtBlock()) {
                 spectated.resetAttackStrengthTicker();
             }
