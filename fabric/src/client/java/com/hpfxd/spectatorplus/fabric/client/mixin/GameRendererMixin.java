@@ -1,6 +1,5 @@
 package com.hpfxd.spectatorplus.fabric.client.mixin;
 
-import com.hpfxd.spectatorplus.fabric.client.SpectatorClientMod;
 import com.hpfxd.spectatorplus.fabric.client.util.SpecUtil;
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.llamalad7.mixinextras.sugar.Local;
@@ -62,11 +61,8 @@ public abstract class GameRendererMixin {
 
     @ModifyExpressionValue(method = "renderItemInHand", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/multiplayer/MultiPlayerGameMode;getPlayerMode()Lnet/minecraft/world/level/GameType;"))
     private GameType spectatorplus$spoofPlayerMode(GameType original) {
-        if (original == GameType.SPECTATOR && SpectatorClientMod.config.renderArms) {
-            final AbstractClientPlayer spectated = SpecUtil.getCameraPlayer(this.minecraft);
-            if (spectated != null && !spectated.isSpectator()) {
-                return GameType.SURVIVAL;
-            }
+        if (SpecUtil.getArmsRenderPlayer(this.minecraft) != null) {
+            return GameType.SURVIVAL;
         }
         return original;
     }

@@ -1,5 +1,6 @@
 package com.hpfxd.spectatorplus.fabric.client.util;
 
+import com.hpfxd.spectatorplus.fabric.client.SpectatorClientMod;
 import com.hpfxd.spectatorplus.fabric.client.sync.ClientSyncController;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.AbstractClientPlayer;
@@ -19,6 +20,20 @@ public final class SpecUtil {
             return spectated;
         }
         return null;
+    }
+
+    /**
+     * Returns the spectated player whose first-person arms should be rendered, or null.
+     */
+    public static AbstractClientPlayer getArmsRenderPlayer(Minecraft minecraft) {
+        if (!SpectatorClientMod.config.renderArms) {
+            return null;
+        }
+        final AbstractClientPlayer spectated = getCameraPlayer(minecraft);
+        if (spectated == null || spectated.isSpectator()) {
+            return null;
+        }
+        return spectated;
     }
 
     // /**
