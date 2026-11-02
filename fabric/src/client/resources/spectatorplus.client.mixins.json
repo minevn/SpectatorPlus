@@ -12,7 +12,7 @@
     "GameRendererMixin",
     "GuiMixin",
     "InventoryAccessor",
-    "ItemInHandRendererAccessor",
+    "IrisHandRendererMixin",
     "ItemInHandRendererMixin",
     "LivingEntityMixin",
     "LocalPlayerAccessor",
